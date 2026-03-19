@@ -1,0 +1,92 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "ReverseProxy": {
+    "Routes": {
+      "api-route": {
+        "MaxRequestBodySize": 209715200,
+        "ClusterId": "backend",
+        "Match": {
+          "Path": "/api/{**catch-all}"
+        }
+      },
+      "api-swagger": {
+        "ClusterId": "backend",
+        "Match": {
+          "Path": "/swagger/{**catch-all}"
+        }
+      },
+      "skins-route": {
+        "ClusterId": "skins",
+        "Match": {
+          "Path": "/skins/{**catch-all}"
+        },
+        "Transforms": [
+          {
+            "PathRemovePrefix": "/skins"
+          }
+        ]
+      },
+      "health-route": {
+        "ClusterId": "backend",
+        "Match": {
+          "Path": "/health"
+        }
+      },
+      "ws-route": {
+        "ClusterId": "backend",
+        "Match": {
+          "Path": "/ws/{**catch-all}"
+        }
+      },
+      "frontend-route": {
+        "ClusterId": "frontend",
+        "Match": {
+          "Path": "/{**catch-all}"
+        }
+      }
+    },
+    "Clusters": {
+      "backend": {
+        "Destinations": {
+          "backend/d1": {
+            "Address": "http://127.0.0.1:8082"
+          }
+        },
+        "HealthCheck": {
+          "Active": {
+            "Enabled": true,
+            "Interval": "00:00:03",
+            "Timeout": "00:00:03",
+            "Policy": "ConsecutiveFailures",
+            "Path": "/health"
+          },
+          "Passive": {
+            "Enabled": true,
+            "Policy": "TransportFailureRate",
+            "ReactivationPeriod": "00:00:30"
+          }
+        }
+      },
+      "skins": {
+        "Destinations": {
+          "skins/d1": {
+            "Address": "http://127.0.0.1:8085"
+          }
+        }
+      },
+      "frontend": {
+        "Destinations": {
+          "frontend/d1": {
+            "Address": "http://127.0.0.1:8081"
+          }
+        }
+      }
+    }
+  }
+}

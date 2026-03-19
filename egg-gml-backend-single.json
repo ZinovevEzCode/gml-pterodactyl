@@ -1,0 +1,149 @@
+{
+  "_comment": "DO NOT EDIT: FILE GENERATED FOR PTERODACTYL EGG IMPORT",
+  "meta": {
+    "version": "PTDL_v2",
+    "update_url": null
+  },
+  "exported_at": "2026-03-20T00:00:00+00:00",
+  "name": "Gml Backend (Single Container)",
+  "author": "devops@example.com",
+  "description": "Production-ready single-container Gml backend stack for Pterodactyl: Api + Client + Skin Service + Proxy via supervisord.",
+  "features": null,
+  "docker_images": {
+    "ghcr.io/YOUR_GH_USER_OR_ORG/gml-backend-pterodactyl:latest": "ghcr.io/YOUR_GH_USER_OR_ORG/gml-backend-pterodactyl:latest"
+  },
+  "file_denylist": [],
+  "startup": "/opt/gml/entrypoint.sh",
+  "config": {
+    "files": "{}",
+    "startup": "{\n  \"done\": \"Now listening on:\\\\s+http://0\\\\.0\\\\.0\\\\.0:\\\\d+\"\n}",
+    "logs": "{}",
+    "stop": "\u0003"
+  },
+  "scripts": {
+    "installation": {
+      "script": "#!/bin/bash\nset -euo pipefail\n\nmkdir -p /mnt/server/data/GmlBackend\nmkdir -p /mnt/server/data/backups\nmkdir -p /mnt/server/data/TextureService\nmkdir -p /mnt/server/data/database\n\n# Для совместимости ожидаем PROJECT_PATH внутри /home/container\nif [ ! -e /mnt/server/data/GmlBackend/backups ]; then\n  ln -s /mnt/server/data/backups /mnt/server/data/GmlBackend/backups\nfi\n\necho \"Install script completed: directories prepared.\"",
+      "container": "ghcr.io/pterodactyl/installers:debian",
+      "entrypoint": "bash"
+    }
+  },
+  "variables": [
+    {
+      "name": "Security key",
+      "description": "Ключ безопасности Gml.Web.Api (минимум 32 символа).",
+      "env_variable": "SECURITY_KEY",
+      "default_value": "643866c80c46c909332b30600d3265803a3807286d6eb7c0d2e164877c809519",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|string|min:32|max:256"
+    },
+    {
+      "name": "Project name",
+      "description": "Имя проекта GML.",
+      "env_variable": "PROJECT_NAME",
+      "default_value": "GmlBackendPanel",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|string|alpha_dash|max:64"
+    },
+    {
+      "name": "Project description",
+      "description": "Описание проекта.",
+      "env_variable": "PROJECT_DESCRIPTION",
+      "default_value": "",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "nullable|string|max:256"
+    },
+    {
+      "name": "Project policy name",
+      "description": "Имя policy для GML.",
+      "env_variable": "PROJECT_POLICYNAME",
+      "default_value": "GmlServerPolicy",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|string|alpha_dash|max:64"
+    },
+    {
+      "name": "Project path",
+      "description": "Базовый путь данных проекта внутри контейнера.",
+      "env_variable": "PROJECT_PATH",
+      "default_value": "/home/container/data/GmlBackend",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|string|max:255"
+    },
+    {
+      "name": "Swagger enabled",
+      "description": "Включить swagger в API.",
+      "env_variable": "SWAGGER_ENABLED",
+      "default_value": "false",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|in:true,false"
+    },
+    {
+      "name": "Market endpoint",
+      "description": "Endpoint маркетплейса.",
+      "env_variable": "MARKET_ENDPOINT",
+      "default_value": "https://gml-market.recloud.tech",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|url|max:255"
+    },
+    {
+      "name": "Timezone",
+      "description": "Timezone контейнера.",
+      "env_variable": "TZ",
+      "default_value": "Europe/Moscow",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|string|max:64"
+    },
+    {
+      "name": "Texture service endpoint",
+      "description": "Внутренний endpoint skin-service для API.",
+      "env_variable": "SERVICE_TEXTURE_ENDPOINT",
+      "default_value": "http://127.0.0.1:8085",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|url|max:255"
+    },
+    {
+      "name": "Public panel port",
+      "description": "Порт, на котором proxy слушает внутри контейнера.",
+      "env_variable": "PUBLIC_PANEL_PORT",
+      "default_value": "8080",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|integer|between:1,65535"
+    },
+    {
+      "name": "S3 enabled (optional)",
+      "description": "Опционально, если используется S3-совместимая интеграция в вашей версии API.",
+      "env_variable": "S3_ENABLED",
+      "default_value": "false",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|in:true,false"
+    },
+    {
+      "name": "MinIO root user (optional)",
+      "description": "Необязательный параметр; MinIO не обязателен для текущей схемы.",
+      "env_variable": "MINIO_ROOT_USER",
+      "default_value": "",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "nullable|string|max:128"
+    },
+    {
+      "name": "MinIO root password (optional)",
+      "description": "Необязательный параметр; MinIO не обязателен для текущей схемы.",
+      "env_variable": "MINIO_ROOT_PASSWORD",
+      "default_value": "",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "nullable|string|max:256"
+    }
+  ]
+}
