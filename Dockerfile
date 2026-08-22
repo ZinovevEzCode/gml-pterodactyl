@@ -6,19 +6,20 @@ FROM ghcr.io/gml-launcher/gml.web.proxy:master AS upstream_proxy
 FROM ghcr.io/gml-launcher/gml.web.client:master AS upstream_client
 FROM ghcr.io/gml-launcher/gml.web.skin.service:master AS upstream_skins
 
-FROM mcr.microsoft.com/dotnet/sdk:10.0-bookworm-slim AS gml-core-build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS gml-core-build
 RUN apt-get update && apt-get install -y --no-install-recommends git \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /src
-RUN git clone --depth 1 https://github.com/Gml-Launcher/Gml.Core.git .
+RUN git clone --depth 1 https://github.com/ZinovevEzCode/Gml.Core.git .
 COPY patches/SystemProcedures.cs src/Gml.Core/Core/Helpers/System/SystemProcedures.cs
 COPY patches/MirrorsHelper.cs src/Gml.Core/Core/Helpers/Mirrors/MirrorsHelper.cs
 COPY patches/Gml.Core.csproj src/Gml.Core/Gml.Core.csproj
 RUN dotnet publish src/Gml.Core/Gml.Core.csproj -c Release -o /out
 
 # Need both .NET 10 (API) and .NET 8 (Proxy/Skin) runtimes
-FROM mcr.microsoft.com/dotnet/aspnet:8.0-bookworm-slim AS dotnet8
-FROM mcr.microsoft.com/dotnet/aspnet:10.0-bookworm-slim AS runtime
+# .NET 10 images are Ubuntu 24.04 (noble); Debian bookworm tags do not exist.
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS dotnet8
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
