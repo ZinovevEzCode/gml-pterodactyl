@@ -54,13 +54,17 @@ RUN useradd -m -d /home/container -s /bin/bash container \
 
 # Copy upstream apps
 COPY --from=upstream_api /app /opt/gml/api
-# Overlay patched Gml.Core and every NuGet DLL it was compiled against
-# (otherwise ProfileProcedures fails: CmlLib.Core.Installer.NeoForge 4.0.1 not found).
+# Overlay patched Gml.Core + CmlLib. Do NOT copy Microsoft/SQLite DLLs:
+# that overwrites EF's Microsoft.Data.Sqlite and breaks SQLitePCLRaw.core.
 RUN --mount=from=gml-core-build,source=/out,target=/mnt/core,ro \
-    cp -a /mnt/core/*.dll /opt/gml/api/ \
- && if [ -d /mnt/core/runtimes ]; then \
-      mkdir -p /opt/gml/api/runtimes && cp -a /mnt/core/runtimes/. /opt/gml/api/runtimes/; \
-    fi
+    set -e \
+ && for f in /mnt/core/*.dll; do \
+      base="$(basename "$f")"; \
+      case "$base" in \
+        Microsoft.*|System.*|SQLite*|EntityFramework*|Azure.*|HarfBuzz*|SkiaSharp*) continue ;; \
+      esac; \
+      cp -a "$f" /opt/gml/api/; \
+    done
 COPY --from=upstream_proxy /app /opt/gml/proxy
 COPY --from=upstream_client /app /opt/gml/client
 COPY --from=upstream_skins /app /opt/gml/skins
