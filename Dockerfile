@@ -54,11 +54,13 @@ RUN useradd -m -d /home/container -s /bin/bash container \
 
 # Copy upstream apps
 COPY --from=upstream_api /app /opt/gml/api
-COPY --from=gml-core-build /out/Gml.Core.dll /opt/gml/api/Gml.Core.dll
-COPY --from=gml-core-build /out/Gml.Common.dll /opt/gml/api/Gml.Common.dll
-COPY --from=gml-core-build /out/Gml.Dto.dll /opt/gml/api/Gml.Dto.dll
-COPY --from=gml-core-build /out/Gml.Domains.dll /opt/gml/api/Gml.Domains.dll
-COPY --from=gml-core-build /out/Gml.Interfaces.dll /opt/gml/api/Gml.Interfaces.dll
+# Overlay patched Gml.Core and every NuGet DLL it was compiled against
+# (otherwise ProfileProcedures fails: CmlLib.Core.Installer.NeoForge 4.0.1 not found).
+RUN --mount=from=gml-core-build,source=/out,target=/mnt/core,ro \
+    cp -a /mnt/core/*.dll /opt/gml/api/ \
+ && if [ -d /mnt/core/runtimes ]; then \
+      mkdir -p /opt/gml/api/runtimes && cp -a /mnt/core/runtimes/. /opt/gml/api/runtimes/; \
+    fi
 COPY --from=upstream_proxy /app /opt/gml/proxy
 COPY --from=upstream_client /app /opt/gml/client
 COPY --from=upstream_skins /app /opt/gml/skins
