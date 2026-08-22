@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends git \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /src
 RUN git clone --depth 1 https://github.com/ZinovevEzCode/Gml.Core.git .
+COPY patches/Directory.Build.props Directory.Build.props
 COPY patches/SystemProcedures.cs src/Gml.Core/Core/Helpers/System/SystemProcedures.cs
 COPY patches/MirrorsHelper.cs src/Gml.Core/Core/Helpers/Mirrors/MirrorsHelper.cs
 COPY patches/Gml.Core.csproj src/Gml.Core/Gml.Core.csproj
@@ -34,10 +35,17 @@ RUN apt-get update \
        tar \
     && rm -rf /var/lib/apt/lists/*
 
-# Add .NET 8 runtime folders into .NET 10 base to support both app generations
-COPY --from=dotnet8 /usr/share/dotnet/host/fxr/8.* /usr/share/dotnet/host/fxr/
-COPY --from=dotnet8 /usr/share/dotnet/shared/Microsoft.NETCore.App/8.* /usr/share/dotnet/shared/Microsoft.NETCore.App/
-COPY --from=dotnet8 /usr/share/dotnet/shared/Microsoft.AspNetCore.App/8.* /usr/share/dotnet/shared/Microsoft.AspNetCore.App/
+# Merge .NET 8 runtimes into the .NET 10 image.
+# COPY .../8.* flattens the version folder, so the host only sees 10.0.x.
+RUN --mount=from=dotnet8,source=/usr/share/dotnet,target=/mnt/dotnet8,ro \
+    mkdir -p /usr/share/dotnet/shared/Microsoft.NETCore.App \
+             /usr/share/dotnet/shared/Microsoft.AspNetCore.App \
+             /usr/share/dotnet/host/fxr \
+ && cp -a /mnt/dotnet8/shared/Microsoft.NETCore.App/8.* /usr/share/dotnet/shared/Microsoft.NETCore.App/ \
+ && cp -a /mnt/dotnet8/shared/Microsoft.AspNetCore.App/8.* /usr/share/dotnet/shared/Microsoft.AspNetCore.App/ \
+ && cp -a /mnt/dotnet8/host/fxr/8.* /usr/share/dotnet/host/fxr/ \
+ && ls -d /usr/share/dotnet/shared/Microsoft.NETCore.App/8.* \
+ && ls -d /usr/share/dotnet/shared/Microsoft.AspNetCore.App/8.*
 
 # Pterodactyl-compatible user and workspace
 RUN useradd -m -d /home/container -s /bin/bash container \
@@ -47,6 +55,10 @@ RUN useradd -m -d /home/container -s /bin/bash container \
 # Copy upstream apps
 COPY --from=upstream_api /app /opt/gml/api
 COPY --from=gml-core-build /out/Gml.Core.dll /opt/gml/api/Gml.Core.dll
+COPY --from=gml-core-build /out/Gml.Common.dll /opt/gml/api/Gml.Common.dll
+COPY --from=gml-core-build /out/Gml.Dto.dll /opt/gml/api/Gml.Dto.dll
+COPY --from=gml-core-build /out/Gml.Domains.dll /opt/gml/api/Gml.Domains.dll
+COPY --from=gml-core-build /out/Gml.Interfaces.dll /opt/gml/api/Gml.Interfaces.dll
 COPY --from=upstream_proxy /app /opt/gml/proxy
 COPY --from=upstream_client /app /opt/gml/client
 COPY --from=upstream_skins /app /opt/gml/skins

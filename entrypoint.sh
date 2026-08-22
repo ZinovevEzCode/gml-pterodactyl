@@ -111,8 +111,10 @@ install_build_dotnet "$PROJECT_PATH"
 install_build_dotnet "$PROJECT_PATH/$CLEAN_NAME"
 install_build_dotnet "$HOME/$CLEAN_NAME"
 
-# Harmless if Wings blocks it; works only with CAP_NET_ADMIN/sysctl.
-echo "0 2147483647" >/proc/sys/net/ipv4/ping_group_range 2>/dev/null || true
+# Wings blocks sysctl; ignore EROFS.
+if [[ -w /proc/sys/net/ipv4/ping_group_range ]]; then
+  echo "0 2147483647" >/proc/sys/net/ipv4/ping_group_range || true
+fi
 
 echo "[entrypoint] Starting GML stack via supervisord..."
 exec /usr/bin/supervisord -c /etc/supervisor/supervisord.conf -n
