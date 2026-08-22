@@ -10,7 +10,7 @@
   "description": "Production-ready single-container Gml backend stack for Pterodactyl: Api + Client + Skin Service + Proxy via supervisord.",
   "features": null,
   "docker_images": {
-    "ghcr.io/YOUR_GH_USER_OR_ORG/gml-backend-pterodactyl:latest": "ghcr.io/YOUR_GH_USER_OR_ORG/gml-backend-pterodactyl:latest"
+    "ghcr.io/zinovevezcode/gml-backend-pterodactyl:latest": "ghcr.io/zinovevezcode/gml-backend-pterodactyl:latest"
   },
   "file_denylist": [],
   "startup": "/opt/gml/entrypoint.sh",

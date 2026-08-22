@@ -15,10 +15,23 @@
 - `proxy.appsettings.json`
 - `egg-gml-backend-single.json`
 - `.github/workflows/build-and-push-ghcr.yml`
+- `patches/` (фикс ICMP в Gml.Core: HTTP вместо ping)
 
 ---
 
-## 1. Подготовить GitHub репозиторий
+## ICMP / «Нет доступных зеркал» / зависание «Get active mirrors»
+
+Pterodactyl Wings снимает `CAP_NET_RAW`. Оригинальный GML перед скачиванием JDK и .NET SDK **пингует** зеркала ICMP. В контейнере ping либо отбрасывает все URL, либо **зависает** — сборка лаунчера стопорится на `Get active mirrors...`.
+
+Что сделано в этом репозитории:
+
+1. Патч `Gml.Core` (`patches/`): зеркала проверяются только по HTTP, без ping. DLL подменяется в `/opt/gml/api/Gml.Core.dll` при сборке образа.
+2. В образ вшиты **Linux JDK 22** и **.NET 8 SDK**. Entrypoint кладёт их туда, куда смотрят `CheckBuildJava` и `InstallDotnet`, поэтому эти шаги не ходят на зеркала вообще.
+3. Windows `java.exe` для Linux-контейнера не подходит.
+
+После смены образа пересоздайте сервер (или Restart). В консоли должны появиться `Installed build JDK` / `Installed build SDK`.
+
+---
 
 1. Создайте новый репозиторий, например `gml-pterodactyl`.
 2. Загрузите туда все файлы из этой папки.
@@ -30,7 +43,7 @@ git init
 git add .
 git commit -m "Add GML backend single-container pterodactyl stack"
 git branch -M main
-git remote add origin https://github.com/<YOU>/gml-pterodactyl.git
+git remote add origin https://github.com/ZinovevEzCode/gml-pterodactyl.git
 git push -u origin main
 ```
 
@@ -51,9 +64,9 @@ git push -u origin main
 В папке проекта выполните:
 
 ```bash
-docker build -t ghcr.io/<YOU>/gml-backend-pterodactyl:latest .
-echo <YOUR_GHCR_PAT> | docker login ghcr.io -u <YOU> --password-stdin
-docker push ghcr.io/<YOU>/gml-backend-pterodactyl:latest
+docker build -t ghcr.io/zinovevezcode/gml-backend-pterodactyl:latest .
+echo <YOUR_GHCR_PAT> | docker login ghcr.io -u ZinovevEzCode --password-stdin
+docker push ghcr.io/zinovevezcode/gml-backend-pterodactyl:latest
 ```
 
 Проверьте, что image появился в GitHub Packages.
@@ -73,20 +86,16 @@ Workflow уже есть:
 
 После выполнения образ появится как:
 
-- `ghcr.io/<owner>/gml-backend-pterodactyl:<tag>`
-- `ghcr.io/<owner>/gml-backend-pterodactyl:latest` (для default branch)
+- `ghcr.io/zinovevezcode/gml-backend-pterodactyl:<tag>`
+- `ghcr.io/zinovevezcode/gml-backend-pterodactyl:latest` (для default branch)
 
 ---
 
-## 4. Подставить ваш image в egg
+## 4. Образ в egg
 
-Откройте `egg-gml-backend-single.json` и замените:
+В `egg-gml-backend-single.json` уже указан:
 
-- `ghcr.io/YOUR_GH_USER_OR_ORG/gml-backend-pterodactyl:latest`
-
-на ваш реальный путь:
-
-- `ghcr.io/<YOU>/gml-backend-pterodactyl:latest`
+- `ghcr.io/zinovevezcode/gml-backend-pterodactyl:latest`
 
 ---
 
