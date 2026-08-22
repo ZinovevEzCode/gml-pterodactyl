@@ -144,6 +144,33 @@
       "user_viewable": true,
       "user_editable": true,
       "rules": "nullable|string|max:256"
+    },
+    {
+      "name": "Pangolin endpoint",
+      "description": "URL панели Pangolin для newt (fosrl). Пусто = newt не подключается.",
+      "env_variable": "PANGOLIN_ENDPOINT",
+      "default_value": "",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "nullable|string|max:255"
+    },
+    {
+      "name": "Newt ID",
+      "description": "Site ID из Pangolin для клиента newt.",
+      "env_variable": "NEWT_ID",
+      "default_value": "",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "nullable|string|max:128"
+    },
+    {
+      "name": "Newt secret",
+      "description": "Site secret из Pangolin для клиента newt.",
+      "env_variable": "NEWT_SECRET",
+      "default_value": "",
+      "user_viewable": false,
+      "user_editable": true,
+      "rules": "nullable|string|max:256"
     }
   ]
 }

@@ -105,9 +105,17 @@ RUN mkdir -p /opt/gml/dotnet-8 \
  && rm -f /tmp/dotnet8.tgz \
  && test -x /opt/gml/dotnet-8/dotnet
 
+# Pangolin site connector (fosrl/newt). Userspace WireGuard; needs NEWT_* env.
+RUN curl -fL --retry 3 --retry-delay 2 --connect-timeout 20 --max-time 120 \
+      -o /usr/local/bin/newt \
+      "https://github.com/fosrl/newt/releases/latest/download/newt_linux_amd64" \
+ && chmod +x /usr/local/bin/newt
+
+COPY --chown=container:container newt-wrapper.sh /opt/gml/newt-wrapper.sh
+
 ARG IMAGE_REVISION=dev
 RUN echo "$IMAGE_REVISION" > /opt/gml/.build-id \
- && chmod +x /opt/gml/entrypoint.sh \
+ && chmod +x /opt/gml/entrypoint.sh /opt/gml/newt-wrapper.sh \
  && chown -R container:container /opt/gml
 
 ENV HOME=/home/container \

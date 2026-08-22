@@ -13,6 +13,9 @@ export MARKET_ENDPOINT="${MARKET_ENDPOINT:-https://gml-market.recloud.tech}"
 export TZ="${TZ:-Europe/Moscow}"
 export SERVICE_TEXTURE_ENDPOINT="${SERVICE_TEXTURE_ENDPOINT:-http://127.0.0.1:8085}"
 export PUBLIC_PANEL_PORT="${PUBLIC_PANEL_PORT:-8080}"
+export PANGOLIN_ENDPOINT="${PANGOLIN_ENDPOINT:-}"
+export NEWT_ID="${NEWT_ID:-}"
+export NEWT_SECRET="${NEWT_SECRET:-}"
 
 # Required secret
 if [[ -z "${SECURITY_KEY:-}" ]]; then
