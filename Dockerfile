@@ -87,8 +87,10 @@ RUN mkdir -p /opt/gml/dotnet-8 \
  && rm -f /tmp/dotnet8.tgz \
  && test -x /opt/gml/dotnet-8/dotnet
 
-RUN chmod +x /opt/gml/entrypoint.sh \
-    && chown -R container:container /opt/gml
+ARG IMAGE_REVISION=dev
+RUN echo "$IMAGE_REVISION" > /opt/gml/.build-id \
+ && chmod +x /opt/gml/entrypoint.sh \
+ && chown -R container:container /opt/gml
 
 ENV HOME=/home/container \
     USER=container \

@@ -2,6 +2,8 @@
 set -euo pipefail
 
 export HOME=/home/container
+export USER="${USER:-container}"
+export TMPDIR="${TMPDIR:-/home/container/tmp}"
 export PROJECT_NAME="${PROJECT_NAME:-GmlBackendPanel}"
 export PROJECT_DESCRIPTION="${PROJECT_DESCRIPTION:-}"
 export PROJECT_POLICYNAME="${PROJECT_POLICYNAME:-GmlServerPolicy}"
@@ -18,30 +20,56 @@ if [[ -z "${SECURITY_KEY:-}" ]]; then
   exit 1
 fi
 
-# Prepare persistent layout in /home/container
+# Wings mounts the image (including /opt/gml) read-only. Only /home/container is writable.
+mkdir -p /home/container/tmp
 mkdir -p /home/container/data/GmlBackend
 mkdir -p /home/container/data/backups
 mkdir -p /home/container/data/TextureService
 mkdir -p /home/container/data/database
+mkdir -p /home/container/gml
 
 # Keep a stable backups path expected by some code paths
 if [[ ! -L /home/container/data/GmlBackend/backups && ! -e /home/container/data/GmlBackend/backups ]]; then
   ln -s /home/container/data/backups /home/container/data/GmlBackend/backups
 fi
 
-# API default SQLite location is relative: database/data.db
-# Make it persistent by linking app-local "database" to /home/container/data/database.
-rm -rf /opt/gml/api/database
-ln -s /home/container/data/database /opt/gml/api/database
+RUNTIME=/home/container/gml
+IMAGE_ID_FILE=/opt/gml/.build-id
+RUNTIME_ID_FILE="$RUNTIME/.build-id"
 
-# Skin service persistent storage
-rm -rf /opt/gml/skins/Storage
-ln -s /home/container/data/TextureService /opt/gml/skins/Storage
+sync_apps() {
+  echo "[entrypoint] Syncing GML apps into writable /home/container/gml (Pterodactyl read-only root)..."
+  for app in api proxy client skins; do
+    rm -rf "$RUNTIME/$app"
+    mkdir -p "$RUNTIME/$app"
+    cp -a "/opt/gml/$app/." "$RUNTIME/$app/"
+  done
+  cp -f "$IMAGE_ID_FILE" "$RUNTIME_ID_FILE"
+  echo "[entrypoint] App sync complete."
+}
+
+if [[ ! -f "$IMAGE_ID_FILE" ]]; then
+  echo "[entrypoint] WARNING: missing $IMAGE_ID_FILE, syncing apps anyway."
+  echo "unknown" > "$RUNTIME_ID_FILE.tmp"
+  IMAGE_ID_FILE="$RUNTIME_ID_FILE.tmp"
+  sync_apps
+elif [[ ! -f "$RUNTIME_ID_FILE" ]] || ! cmp -s "$IMAGE_ID_FILE" "$RUNTIME_ID_FILE"; then
+  sync_apps
+else
+  echo "[entrypoint] GML apps already synced for this image."
+fi
+
+# Persist SQLite and skin files on the volume, not next to the DLL.
+rm -rf "$RUNTIME/api/database"
+ln -sfn /home/container/data/database "$RUNTIME/api/database"
+
+rm -rf "$RUNTIME/skins/Storage"
+ln -sfn /home/container/data/TextureService "$RUNTIME/skins/Storage"
 
 # If app code still checks root-like project folder, provide a compatibility path under /home/container.
 mkdir -p /home/container/.compat-root
 rm -rf "/home/container/.compat-root/${PROJECT_NAME}"
-ln -s /home/container/data/GmlBackend "/home/container/.compat-root/${PROJECT_NAME}"
+ln -sfn /home/container/data/GmlBackend "/home/container/.compat-root/${PROJECT_NAME}"
 
 # Wings always drops CAP_NET_RAW. .NET Ping then fails and GML reports
 # "Нет доступных зеркал". Skip that by placing Linux JDK where CheckBuildJava looks:
