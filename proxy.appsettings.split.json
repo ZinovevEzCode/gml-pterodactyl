@@ -9,14 +9,16 @@
   "ReverseProxy": {
     "Routes": {
       "api-route": {
+        "Order": 1,
         "MaxRequestBodySize": 209715200,
         "ClusterId": "backend",
         "Match": {
-          "Hosts": [ "__API_HOST__", "127.0.0.1", "localhost" ],
+          "Hosts": [ "__API_HOST__", "__PANEL_HOST__", "127.0.0.1", "localhost" ],
           "Path": "/api/{**catch-all}"
         }
       },
       "api-swagger": {
+        "Order": 1,
         "ClusterId": "backend",
         "Match": {
           "Hosts": [ "__API_HOST__", "127.0.0.1", "localhost" ],
@@ -24,9 +26,10 @@
         }
       },
       "skins-route": {
+        "Order": 1,
         "ClusterId": "skins",
         "Match": {
-          "Hosts": [ "__API_HOST__", "127.0.0.1", "localhost" ],
+          "Hosts": [ "__API_HOST__", "__PANEL_HOST__", "127.0.0.1", "localhost" ],
           "Path": "/skins/{**catch-all}"
         },
         "Transforms": [
@@ -36,20 +39,23 @@
         ]
       },
       "health-route": {
+        "Order": 1,
         "ClusterId": "backend",
         "Match": {
-          "Hosts": [ "__API_HOST__", "127.0.0.1", "localhost" ],
+          "Hosts": [ "__API_HOST__", "__PANEL_HOST__", "127.0.0.1", "localhost" ],
           "Path": "/health"
         }
       },
       "ws-route": {
+        "Order": 1,
         "ClusterId": "backend",
         "Match": {
-          "Hosts": [ "__API_HOST__", "127.0.0.1", "localhost" ],
+          "Hosts": [ "__API_HOST__", "__PANEL_HOST__", "127.0.0.1", "localhost" ],
           "Path": "/ws/{**catch-all}"
         }
       },
       "frontend-route": {
+        "Order": 100,
         "ClusterId": "frontend",
         "Match": {
           "Hosts": [ "__PANEL_HOST__" ],

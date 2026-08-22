@@ -112,8 +112,8 @@
 
 | Ресурс | Хост | Куда |
 |---|---|---|
-| Дашборд | `launcher.andline.pro` | панель |
-| API | `api.andline.pro` | `/api`, `/ws`, `/skins`, файлы |
+| Дашборд | `launcher.andline.pro` | панель + `/api` (браузер бьёт в тот же хост) |
+| Лаунчер | `api.andline.pro` | `/api`, `/ws`, `/skins`, файлы |
 
 Desktop launcher при сборке: Host = `https://api.andline.pro` (без `/` в конце). Старый exe с Host `https://launcher.andline.pro` нужно пересобрать.
 
