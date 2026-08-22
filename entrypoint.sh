@@ -13,6 +13,8 @@ export MARKET_ENDPOINT="${MARKET_ENDPOINT:-https://gml-market.recloud.tech}"
 export TZ="${TZ:-Europe/Moscow}"
 export SERVICE_TEXTURE_ENDPOINT="${SERVICE_TEXTURE_ENDPOINT:-http://127.0.0.1:8085}"
 export PUBLIC_PANEL_PORT="${PUBLIC_PANEL_PORT:-8080}"
+export PUBLIC_PANEL_HOST="${PUBLIC_PANEL_HOST:-}"
+export PUBLIC_API_HOST="${PUBLIC_API_HOST:-}"
 export PANGOLIN_ENDPOINT="${PANGOLIN_ENDPOINT:-}"
 export NEWT_ID="${NEWT_ID:-}"
 export NEWT_SECRET="${NEWT_SECRET:-}"
@@ -75,6 +77,48 @@ elif [[ ! -f "$RUNTIME_ID_FILE" ]] || ! cmp -s "$IMAGE_ID_FILE" "$RUNTIME_ID_FIL
 else
   echo "[entrypoint] GML apps already synced for this image."
 fi
+
+normalize_host() {
+  local h="${1:-}"
+  h="${h#https://}"
+  h="${h#http://}"
+  h="${h%%/*}"
+  echo "$h"
+}
+
+# Host-based split: dashboard on PUBLIC_PANEL_HOST, API/files/ws/skins on PUBLIC_API_HOST.
+# Empty either variable keeps the default path-only proxy (one public hostname).
+configure_proxy_hosts() {
+  local panel_host api_host template dest
+  panel_host="$(normalize_host "${PUBLIC_PANEL_HOST:-}")"
+  api_host="$(normalize_host "${PUBLIC_API_HOST:-}")"
+  dest="$RUNTIME/proxy/appsettings.json"
+  mkdir -p "$RUNTIME/proxy"
+
+  if [[ -z "$panel_host" || -z "$api_host" ]]; then
+    if [[ -f /opt/gml/proxy/appsettings.json ]]; then
+      cp -f /opt/gml/proxy/appsettings.json "$dest"
+    fi
+    echo "[entrypoint] Proxy: single-host mode (path routing). Set PUBLIC_PANEL_HOST and PUBLIC_API_HOST to split dashboard/API."
+    return
+  fi
+  if [[ "$panel_host" == "$api_host" ]]; then
+    echo "[entrypoint] WARNING: PUBLIC_PANEL_HOST and PUBLIC_API_HOST are the same ($panel_host). Keeping path routing."
+    return
+  fi
+
+  template="/opt/gml/proxy/appsettings.split.json"
+  if [[ ! -f "$template" ]]; then
+    echo "[entrypoint] WARNING: missing $template, keeping path routing."
+    return
+  fi
+
+  mkdir -p "$RUNTIME/proxy"
+  sed -e "s/__PANEL_HOST__/${panel_host}/g" -e "s/__API_HOST__/${api_host}/g" "$template" > "$dest"
+  echo "[entrypoint] Proxy split: panel=$panel_host  api=$api_host"
+}
+
+configure_proxy_hosts
 
 # Persist SQLite and skin files on the volume, not next to the DLL.
 rm -rf "$RUNTIME/api/database"

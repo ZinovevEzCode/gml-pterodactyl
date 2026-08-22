@@ -103,6 +103,20 @@
 
 То есть пользователь/desktop launcher ходит на один публичный URL proxy.
 
+Чтобы развести **дашборд** и **API** по поддоменам (без правил Pangolin на пути):
+
+- `PUBLIC_PANEL_HOST=launcher.andline.pro`
+- `PUBLIC_API_HOST=api.andline.pro`
+
+В Pangolin два ресурса на **один** newt и один порт `127.0.0.1:${PUBLIC_PANEL_PORT}`:
+
+| Ресурс | Хост | Куда |
+|---|---|---|
+| Дашборд | `launcher.andline.pro` | панель |
+| API | `api.andline.pro` | `/api`, `/ws`, `/skins`, файлы |
+
+Desktop launcher при сборке: Host = `https://api.andline.pro` (без `/` в конце). Старый exe с Host `https://launcher.andline.pro` нужно пересобрать.
+
 ---
 
 ## 6. Данные и персистентность
@@ -139,7 +153,7 @@
 Этот сервер обслуживает backend/web stack.  
 Desktop `Gml.Launcher` собирается отдельно и в его конфиге указываются:
 
-- Host API = URL вашего proxy (`http(s)://<domain>:<port>`)
+- Host API = публичный API (`https://api.andline.pro` при split, иначе URL proxy)
 - FolderName = нужное значение проекта
 
 Не запускайте desktop GUI в контейнере Pterodactyl.

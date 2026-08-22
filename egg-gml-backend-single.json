@@ -119,6 +119,24 @@
       "rules": "required|integer|between:1,65535"
     },
     {
+      "name": "Public panel host",
+      "description": "Публичный хост дашборда, без https://. Пример: launcher.andline.pro. Пусто = один домен на всё.",
+      "env_variable": "PUBLIC_PANEL_HOST",
+      "default_value": "",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "nullable|string|max:255"
+    },
+    {
+      "name": "Public API host",
+      "description": "Публичный хост API/файлов/лаунчера, без https://. Пример: api.andline.pro. Заполняйте вместе с Public panel host.",
+      "env_variable": "PUBLIC_API_HOST",
+      "default_value": "",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "nullable|string|max:255"
+    },
+    {
       "name": "S3 enabled (optional)",
       "description": "Опционально, если используется S3-совместимая интеграция в вашей версии API.",
       "env_variable": "S3_ENABLED",

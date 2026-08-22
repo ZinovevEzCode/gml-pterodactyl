@@ -74,6 +74,7 @@ COPY --chown=container:container entrypoint.sh /opt/gml/entrypoint.sh
 COPY supervisord.conf /etc/supervisor/supervisord.conf
 COPY supervisor-gml.conf /etc/supervisor/conf.d/gml.conf
 COPY --chown=container:container proxy.appsettings.json /opt/gml/proxy/appsettings.json
+COPY --chown=container:container proxy.appsettings.split.json /opt/gml/proxy/appsettings.split.json
 
 # Linux JDK 22 for GML CheckBuildJava. Wings drops NET_RAW so ICMP mirrors
 # never work; having java on disk skips GetAvailableMirrorAsync entirely.
