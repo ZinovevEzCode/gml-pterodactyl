@@ -36,6 +36,9 @@ mkdir -p /home/container/bin
 DOTNET_MUXER="$(readlink -f /usr/bin/dotnet 2>/dev/null || echo /usr/share/dotnet/dotnet)"
 cp -f "$DOTNET_MUXER" /home/container/bin/dotnet
 chmod +x /home/container/bin/dotnet
+# Muxer looks next to itself first; DOTNET_ROOT is ignored until host/fxr exists.
+ln -sfn /usr/share/dotnet/host /home/container/bin/host
+ln -sfn /usr/share/dotnet/shared /home/container/bin/shared
 rm -rf /home/container/bin/plugins
 ln -sfn /home/container/data/plugins /home/container/bin/plugins
 
