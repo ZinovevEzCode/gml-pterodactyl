@@ -64,9 +64,9 @@ git push -u origin main
 В папке проекта выполните:
 
 ```bash
-docker build -t ghcr.io/zinovevezcode/gml-backend-pterodactyl:latest .
+docker build -t ghcr.io/zinovevezcode/gml-pterodactyl:latest .
 echo <YOUR_GHCR_PAT> | docker login ghcr.io -u ZinovevEzCode --password-stdin
-docker push ghcr.io/zinovevezcode/gml-backend-pterodactyl:latest
+docker push ghcr.io/zinovevezcode/gml-pterodactyl:latest
 ```
 
 Проверьте, что image появился в GitHub Packages.
@@ -86,8 +86,8 @@ Workflow уже есть:
 
 После выполнения образ появится как:
 
-- `ghcr.io/zinovevezcode/gml-backend-pterodactyl:<tag>`
-- `ghcr.io/zinovevezcode/gml-backend-pterodactyl:latest` (для default branch)
+- `ghcr.io/zinovevezcode/gml-pterodactyl:<tag>`
+- `ghcr.io/zinovevezcode/gml-pterodactyl:latest` (для default branch)
 
 ---
 
@@ -95,7 +95,7 @@ Workflow уже есть:
 
 В `egg-gml-backend-single.json` уже указан:
 
-- `ghcr.io/zinovevezcode/gml-backend-pterodactyl:latest`
+- `ghcr.io/zinovevezcode/gml-pterodactyl:latest`
 
 ---
 
