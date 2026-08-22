@@ -26,7 +26,18 @@ mkdir -p /home/container/data/GmlBackend
 mkdir -p /home/container/data/backups
 mkdir -p /home/container/data/TextureService
 mkdir -p /home/container/data/database
+mkdir -p /home/container/data/plugins
 mkdir -p /home/container/gml
+mkdir -p /home/container/bin
+
+# PluginsService uses Environment.ProcessPath, which is /usr/share/dotnet/dotnet
+# when launched via /usr/bin/dotnet. That makes plugins dir /usr/share/dotnet/plugins
+# (read-only). Run a muxer copy from the volume so plugins land on /home/container.
+DOTNET_MUXER="$(readlink -f /usr/bin/dotnet 2>/dev/null || echo /usr/share/dotnet/dotnet)"
+cp -f "$DOTNET_MUXER" /home/container/bin/dotnet
+chmod +x /home/container/bin/dotnet
+rm -rf /home/container/bin/plugins
+ln -sfn /home/container/data/plugins /home/container/bin/plugins
 
 # Keep a stable backups path expected by some code paths
 if [[ ! -L /home/container/data/GmlBackend/backups && ! -e /home/container/data/GmlBackend/backups ]]; then
