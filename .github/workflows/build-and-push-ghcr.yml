@@ -44,6 +44,14 @@ jobs:
             type=ref,event=tag
             type=sha
 
+      - name: Resolve Gml.Core commit
+        id: gml_core
+        run: |
+          sha="$(git ls-remote https://github.com/ZinovevEzCode/Gml.Core.git refs/heads/master | cut -f1)"
+          test -n "$sha"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "Gml.Core master is $sha"
+
       - name: Setup Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -58,5 +66,6 @@ jobs:
           sbom: false
           build-args: |
             IMAGE_REVISION=${{ github.sha }}
+            GML_CORE_SHA=${{ steps.gml_core.outputs.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

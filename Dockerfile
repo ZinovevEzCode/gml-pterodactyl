@@ -10,7 +10,13 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS gml-core-build
 RUN apt-get update && apt-get install -y --no-install-recommends git \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /src
-RUN git clone --depth 1 https://github.com/ZinovevEzCode/Gml.Core.git .
+# GML_CORE_SHA is referenced here on purpose: without it the clone layer stays in
+# the buildx cache and a rebuild silently ships the previous Gml.Core commit.
+ARG GML_CORE_SHA=master
+RUN git clone --depth 1 https://github.com/ZinovevEzCode/Gml.Core.git . \
+ && head="$(git rev-parse HEAD)" \
+ && echo "Gml.Core at $head (expected $GML_CORE_SHA)" \
+ && { [ "$GML_CORE_SHA" = "master" ] || [ "$head" = "$GML_CORE_SHA" ]; }
 COPY patches/Directory.Build.props Directory.Build.props
 COPY patches/SystemProcedures.cs src/Gml.Core/Core/Helpers/System/SystemProcedures.cs
 COPY patches/MirrorsHelper.cs src/Gml.Core/Core/Helpers/Mirrors/MirrorsHelper.cs
