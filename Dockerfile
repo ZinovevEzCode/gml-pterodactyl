@@ -23,6 +23,9 @@ COPY patches/ProfileProcedures.cs src/Gml.Core/Core/Helpers/Profiles/ProfileProc
 COPY patches/GameDownloader.cs src/Gml.Core/Core/Helpers/Game/GameDownloader.cs
 COPY patches/LauncherProcedures.cs src/Gml.Core/Core/Helpers/Launcher/LauncherProcedures.cs
 COPY patches/Gml.Core.csproj src/Gml.Core/Gml.Core.csproj
+COPY patches/Gml.Dto.csproj src/Gml.Dto/Gml.Dto.csproj
+COPY patches/SettingsUpdateDto.cs src/Gml.Dto/Settings/SettingsUpdateDto.cs
+COPY patches/FlexibleSettingsJsonConverters.cs src/Gml.Dto/Settings/FlexibleSettingsJsonConverters.cs
 RUN dotnet publish src/Gml.Core/Gml.Core.csproj -c Release -o /out
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS economy-build

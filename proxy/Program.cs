@@ -9,6 +9,7 @@ builder.Services.AddReverseProxy()
 
 var app = builder.Build();
 app.UseMiddleware<PublicOriginRewriteMiddleware>();
+app.UseMiddleware<SettingsPlatformBodyMiddleware>();
 app.MapReverseProxy(pipeline =>
 {
     pipeline.UseMiddleware<HealthInfoMiddleware>();
