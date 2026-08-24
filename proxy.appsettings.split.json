@@ -69,7 +69,11 @@
         "Match": {
           "Hosts": [ "__PANEL_HOST__" ],
           "Path": "/{**catch-all}"
-        }
+        },
+        "Transforms": [
+          { "RequestHeaderOriginalHost": "true" },
+          { "RequestHeader": "X-Forwarded-Proto", "Set": "https" }
+        ]
       }
     },
     "Clusters": {

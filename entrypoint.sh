@@ -15,6 +15,7 @@ export SERVICE_TEXTURE_ENDPOINT="${SERVICE_TEXTURE_ENDPOINT:-http://127.0.0.1:80
 export PUBLIC_PANEL_PORT="${PUBLIC_PANEL_PORT:-8080}"
 export PUBLIC_PANEL_HOST="${PUBLIC_PANEL_HOST:-}"
 export PUBLIC_API_HOST="${PUBLIC_API_HOST:-}"
+export AUTH_TRUST_HOST=true
 export PANGOLIN_ENDPOINT="${PANGOLIN_ENDPOINT:-}"
 export NEWT_ID="${NEWT_ID:-}"
 export NEWT_SECRET="${NEWT_SECRET:-}"
@@ -88,6 +89,13 @@ normalize_host() {
   h="${h%%/*}"
   echo "$h"
 }
+
+panel_host_for_auth="$(normalize_host "${PUBLIC_PANEL_HOST:-}")"
+if [[ -n "$panel_host_for_auth" ]]; then
+  export AUTH_URL="https://${panel_host_for_auth}"
+  export NEXTAUTH_URL="https://${panel_host_for_auth}"
+  echo "[entrypoint] Dashboard public URL: $AUTH_URL"
+fi
 
 # Host-based split: dashboard on PUBLIC_PANEL_HOST, API/files/ws/skins on PUBLIC_API_HOST.
 # Empty either variable keeps the default path-only proxy (one public hostname).
@@ -181,4 +189,6 @@ if [[ -w /proc/sys/net/ipv4/ping_group_range ]]; then
 fi
 
 echo "[entrypoint] Starting GML stack via supervisord..."
+export AUTH_URL="${AUTH_URL:-}"
+export NEXTAUTH_URL="${NEXTAUTH_URL:-}"
 exec /usr/bin/supervisord -c /etc/supervisor/supervisord.conf -n

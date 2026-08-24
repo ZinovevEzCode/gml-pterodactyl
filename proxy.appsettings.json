@@ -48,7 +48,11 @@
         "ClusterId": "frontend",
         "Match": {
           "Path": "/{**catch-all}"
-        }
+        },
+        "Transforms": [
+          { "RequestHeaderOriginalHost": "true" },
+          { "RequestHeader": "X-Forwarded-Proto", "Set": "https" }
+        ]
       },
       "economy-me": {
         "Order": -1,
