@@ -49,6 +49,14 @@
         "Match": {
           "Path": "/{**catch-all}"
         }
+      },
+      "economy-me": {
+        "Order": -1,
+        "ClusterId": "economy",
+        "Match": {
+          "Path": "/api/v1/users/me",
+          "Methods": [ "GET" ]
+        }
       }
     },
     "Clusters": {
@@ -84,6 +92,13 @@
         "Destinations": {
           "frontend/d1": {
             "Address": "http://127.0.0.1:8081"
+          }
+        }
+      },
+      "economy": {
+        "Destinations": {
+          "economy/d1": {
+            "Address": "http://127.0.0.1:8086"
           }
         }
       }

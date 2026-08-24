@@ -1,0 +1,6 @@
+.git
+**/.git
+economy/bin
+economy/obj
+**/bin
+**/obj

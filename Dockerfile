@@ -23,7 +23,12 @@ COPY patches/MirrorsHelper.cs src/Gml.Core/Core/Helpers/Mirrors/MirrorsHelper.cs
 COPY patches/Gml.Core.csproj src/Gml.Core/Gml.Core.csproj
 RUN dotnet publish src/Gml.Core/Gml.Core.csproj -c Release -o /out
 
-# Need both .NET 10 (API) and .NET 8 (Proxy/Skin) runtimes
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS economy-build
+WORKDIR /src
+COPY economy/ ./
+RUN dotnet publish Andline.Economy.csproj -c Release -o /out --nologo
+
+# Need both .NET 10 (API) and .NET 8 (Proxy / Skin / Economy) runtimes
 # .NET 10 images are Ubuntu 24.04 (noble); Debian bookworm tags do not exist.
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS dotnet8
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
@@ -75,6 +80,7 @@ RUN --mount=from=gml-core-build,source=/out,target=/mnt/core,ro \
 COPY --from=upstream_proxy /app /opt/gml/proxy
 COPY --from=upstream_client /app /opt/gml/client
 COPY --from=upstream_skins /app /opt/gml/skins
+COPY --from=economy-build /out /opt/gml/economy
 
 # Local orchestration/config
 COPY --chown=container:container entrypoint.sh /opt/gml/entrypoint.sh

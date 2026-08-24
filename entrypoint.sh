@@ -18,6 +18,9 @@ export PUBLIC_API_HOST="${PUBLIC_API_HOST:-}"
 export PANGOLIN_ENDPOINT="${PANGOLIN_ENDPOINT:-}"
 export NEWT_ID="${NEWT_ID:-}"
 export NEWT_SECRET="${NEWT_SECRET:-}"
+export SHOP_INTERNAL_URL="${SHOP_INTERNAL_URL:-}"
+export SHOP_INTERNAL_KEY="${SHOP_INTERNAL_KEY:-}"
+export SHOP_INTERNAL_HEADER="${SHOP_INTERNAL_HEADER:-X-Internal-Key}"
 
 # Required secret
 if [[ -z "${SECURITY_KEY:-}" ]]; then
@@ -58,7 +61,7 @@ RUNTIME_ID_FILE="$RUNTIME/.build-id"
 
 sync_apps() {
   echo "[entrypoint] Syncing GML apps into writable /home/container/gml (Pterodactyl read-only root)..."
-  for app in api proxy client skins; do
+  for app in api proxy client skins economy; do
     rm -rf "$RUNTIME/$app"
     mkdir -p "$RUNTIME/$app"
     cp -a "/opt/gml/$app/." "$RUNTIME/$app/"

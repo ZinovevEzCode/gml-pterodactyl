@@ -80,6 +80,12 @@
   Оставить: `http://127.0.0.1:8085`
 - `PUBLIC_PANEL_PORT`  
   Обычно `8080` (внутри контейнера).
+- `SHOP_INTERNAL_URL` *(опционально)*  
+  Внутренний URL магазина, например `https://shop.example/internal/player/{uuid}`. Пусто = нули в сайдбаре.
+- `SHOP_INTERNAL_KEY` *(опционально)*  
+  Секрет заголовка магазина. Не попадает в лаунчер.
+- `SHOP_INTERNAL_HEADER`  
+  По умолчанию `X-Internal-Key`.
 
 Опционально:
 
@@ -100,6 +106,7 @@
 - `API`: `127.0.0.1:8082`
 - `Frontend`: `127.0.0.1:8081`
 - `Skin Service`: `127.0.0.1:8085`
+- `Economy`: `127.0.0.1:8086` (`GET /api/v1/users/me`)
 
 То есть пользователь/desktop launcher ходит на один публичный URL proxy.
 

@@ -7,7 +7,7 @@
   "exported_at": "2026-03-20T00:00:00+00:00",
   "name": "Gml Backend (Single Container)",
   "author": "devops@example.com",
-  "description": "Production-ready single-container Gml backend stack for Pterodactyl: Api + Client + Skin Service + Proxy via supervisord.",
+  "description": "Production-ready single-container Gml backend stack for Pterodactyl: Api + Client + Skin Service + Andline Economy + Proxy via supervisord.",
   "features": null,
   "docker_images": {
     "ghcr.io/zinovevezcode/gml-pterodactyl:latest": "ghcr.io/zinovevezcode/gml-pterodactyl:latest"
@@ -189,6 +189,33 @@
       "user_viewable": false,
       "user_editable": true,
       "rules": "nullable|string|max:256"
+    },
+    {
+      "name": "Shop internal URL",
+      "description": "Внутренний URL магазина для кошелька. Можно с {uuid}/{name}, например https://shop.example/internal/player/{uuid}. Пусто = нули.",
+      "env_variable": "SHOP_INTERNAL_URL",
+      "default_value": "",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "nullable|string|max:255"
+    },
+    {
+      "name": "Shop internal key",
+      "description": "Секрет для заголовка магазина. Только server-to-server, в лаунчер не попадает.",
+      "env_variable": "SHOP_INTERNAL_KEY",
+      "default_value": "",
+      "user_viewable": false,
+      "user_editable": true,
+      "rules": "nullable|string|max:256"
+    },
+    {
+      "name": "Shop internal header",
+      "description": "Имя заголовка с ключом магазина.",
+      "env_variable": "SHOP_INTERNAL_HEADER",
+      "default_value": "X-Internal-Key",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "nullable|string|max:64"
     }
   ]
 }
