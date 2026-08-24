@@ -22,6 +22,7 @@ COPY patches/SystemProcedures.cs src/Gml.Core/Core/Helpers/System/SystemProcedur
 COPY patches/MirrorsHelper.cs src/Gml.Core/Core/Helpers/Mirrors/MirrorsHelper.cs
 COPY patches/ProfileProcedures.cs src/Gml.Core/Core/Helpers/Profiles/ProfileProcedures.cs
 COPY patches/GameDownloader.cs src/Gml.Core/Core/Helpers/Game/GameDownloader.cs
+COPY patches/LauncherProcedures.cs src/Gml.Core/Core/Helpers/Launcher/LauncherProcedures.cs
 COPY patches/Gml.Core.csproj src/Gml.Core/Gml.Core.csproj
 RUN dotnet publish src/Gml.Core/Gml.Core.csproj -c Release -o /out
 
