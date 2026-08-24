@@ -2,7 +2,6 @@
 
 # Upstream runtime images with published apps
 FROM ghcr.io/gml-launcher/gml.web.api:master AS upstream_api
-FROM ghcr.io/gml-launcher/gml.web.proxy:master AS upstream_proxy
 FROM ghcr.io/gml-launcher/gml.web.client:master AS upstream_client
 FROM ghcr.io/gml-launcher/gml.web.skin.service:master AS upstream_skins
 
@@ -30,6 +29,11 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS economy-build
 WORKDIR /src
 COPY economy/ ./
 RUN dotnet publish Andline.Economy.csproj -c Release -o /out --nologo
+
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS proxy-build
+WORKDIR /src
+COPY proxy/ ./
+RUN dotnet publish Gml.Web.Proxy.csproj -c Release -o /out --nologo
 
 # Need both .NET 10 (API) and .NET 8 (Proxy / Skin / Economy) runtimes
 # .NET 10 images are Ubuntu 24.04 (noble); Debian bookworm tags do not exist.
@@ -80,7 +84,7 @@ RUN --mount=from=gml-core-build,source=/out,target=/mnt/core,ro \
       esac; \
       cp -a "$f" /opt/gml/api/; \
     done
-COPY --from=upstream_proxy /app /opt/gml/proxy
+COPY --from=proxy-build /out /opt/gml/proxy
 COPY --from=upstream_client /app /opt/gml/client
 COPY --from=upstream_skins /app /opt/gml/skins
 COPY --from=economy-build /out /opt/gml/economy
