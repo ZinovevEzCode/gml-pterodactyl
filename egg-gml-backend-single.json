@@ -120,9 +120,9 @@
     },
     {
       "name": "Public panel host",
-      "description": "Публичный хост дашборда, без https://. Пример: launcher.andline.pro. Пусто = один домен на всё.",
+      "description": "Публичный хост дашборда, без https://. Без этого после истечения сессии редирект уходит на http://localhost:8081/auth/signin.",
       "env_variable": "PUBLIC_PANEL_HOST",
-      "default_value": "",
+      "default_value": "launcher.andline.pro",
       "user_viewable": true,
       "user_editable": true,
       "rules": "nullable|string|max:255"

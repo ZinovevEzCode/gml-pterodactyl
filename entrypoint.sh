@@ -95,10 +95,39 @@ if [[ -n "$panel_host_for_auth" ]]; then
   export AUTH_URL="https://${panel_host_for_auth}"
   export NEXTAUTH_URL="https://${panel_host_for_auth}"
   echo "[entrypoint] Dashboard public URL: $AUTH_URL"
+else
+  echo "[entrypoint] WARNING: PUBLIC_PANEL_HOST is empty. After session expiry the dashboard will redirect to http://localhost:8081/auth/signin."
 fi
 
+# Next.js middleware builds redirects from Host / X-Forwarded-*. Without these
+# it uses HOSTNAME:PORT (127.0.0.1:8081) when the access token expires.
+apply_proxy_placeholders() {
+  local dest="$1"
+  local panel_host="$2"
+  local api_host="$3"
+  if [[ ! -f "$dest" ]]; then
+    return
+  fi
+  if [[ -z "$panel_host" ]]; then
+    PROXY_DEST="$dest" node -e '
+      const fs = require("fs");
+      const path = process.env.PROXY_DEST;
+      const data = JSON.parse(fs.readFileSync(path, "utf8"));
+      const route = data?.ReverseProxy?.Routes?.["frontend-route"];
+      if (route) route.Transforms = [{ RequestHeaderOriginalHost: "true" }];
+      fs.writeFileSync(path, JSON.stringify(data, null, 2) + "\n");
+    '
+    return
+  fi
+  sed -i "s/__PANEL_HOST__/${panel_host}/g" "$dest"
+  if [[ -n "$api_host" ]]; then
+    sed -i "s/__API_HOST__/${api_host}/g" "$dest"
+  fi
+}
+
 # Host-based split: dashboard on PUBLIC_PANEL_HOST, API/files/ws/skins on PUBLIC_API_HOST.
-# Empty either variable keeps the default path-only proxy (one public hostname).
+# Empty API host keeps path-only routing, but the panel host is still forced into
+# forwarded headers so auth redirects stay on the public domain.
 configure_proxy_hosts() {
   local panel_host api_host template dest
   panel_host="$(normalize_host "${PUBLIC_PANEL_HOST:-}")"
@@ -106,27 +135,34 @@ configure_proxy_hosts() {
   dest="$RUNTIME/proxy/appsettings.json"
   mkdir -p "$RUNTIME/proxy"
 
-  if [[ -z "$panel_host" || -z "$api_host" ]]; then
-    if [[ -f /opt/gml/proxy/appsettings.json ]]; then
+  if [[ -n "$panel_host" && -n "$api_host" && "$panel_host" != "$api_host" ]]; then
+    template="/opt/gml/proxy/appsettings.split.json"
+    if [[ ! -f "$template" ]]; then
+      echo "[entrypoint] WARNING: missing $template, keeping path routing."
       cp -f /opt/gml/proxy/appsettings.json "$dest"
+      apply_proxy_placeholders "$dest" "$panel_host" "$api_host"
+    else
+      cp -f "$template" "$dest"
+      apply_proxy_placeholders "$dest" "$panel_host" "$api_host"
+      echo "[entrypoint] Proxy split: panel=$panel_host  api=$api_host"
     fi
-    echo "[entrypoint] Proxy: single-host mode (path routing). Set PUBLIC_PANEL_HOST and PUBLIC_API_HOST to split dashboard/API."
-    return
-  fi
-  if [[ "$panel_host" == "$api_host" ]]; then
-    echo "[entrypoint] WARNING: PUBLIC_PANEL_HOST and PUBLIC_API_HOST are the same ($panel_host). Keeping path routing."
     return
   fi
 
-  template="/opt/gml/proxy/appsettings.split.json"
-  if [[ ! -f "$template" ]]; then
-    echo "[entrypoint] WARNING: missing $template, keeping path routing."
+  if [[ -f /opt/gml/proxy/appsettings.json ]]; then
+    cp -f /opt/gml/proxy/appsettings.json "$dest"
+  fi
+
+  if [[ -z "$panel_host" ]]; then
+    apply_proxy_placeholders "$dest" "" ""
+    echo "[entrypoint] Proxy: single-host mode (path routing). Set PUBLIC_PANEL_HOST or session redirects go to localhost:8081."
     return
   fi
 
-  mkdir -p "$RUNTIME/proxy"
-  sed -e "s/__PANEL_HOST__/${panel_host}/g" -e "s/__API_HOST__/${api_host}/g" "$template" > "$dest"
-  echo "[entrypoint] Proxy split: panel=$panel_host  api=$api_host"
+  apply_proxy_placeholders "$dest" "$panel_host" "$api_host"
+  if [[ -z "$api_host" || "$panel_host" == "$api_host" ]]; then
+    echo "[entrypoint] Proxy: single-host mode, dashboard origin https://$panel_host"
+  fi
 }
 
 configure_proxy_hosts

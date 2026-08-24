@@ -50,8 +50,11 @@
           "Path": "/{**catch-all}"
         },
         "Transforms": [
-          { "RequestHeaderOriginalHost": "true" },
-          { "RequestHeader": "X-Forwarded-Proto", "Set": "https" }
+          { "X-Forwarded": "Off" },
+          { "RequestHeader": "X-Forwarded-Host", "Set": "__PANEL_HOST__" },
+          { "RequestHeader": "X-Forwarded-Proto", "Set": "https" },
+          { "RequestHeader": "X-Forwarded-Port", "Set": "443" },
+          { "RequestHeader": "Host", "Set": "__PANEL_HOST__" }
         ]
       },
       "economy-me": {

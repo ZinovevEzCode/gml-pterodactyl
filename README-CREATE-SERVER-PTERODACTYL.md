@@ -87,6 +87,8 @@
 - `SHOP_INTERNAL_HEADER`  
   По умолчанию `X-Internal-Key`.
 
+Контракт магазина и промпт для сайта: [README-SHOP-INTERNAL.md](README-SHOP-INTERNAL.md).
+
 Опционально:
 
 - `S3_ENABLED`
@@ -110,10 +112,11 @@
 
 То есть пользователь/desktop launcher ходит на один публичный URL proxy.
 
-Чтобы развести **дашборд** и **API** по поддоменам (без правил Pangolin на пути):
-
-- `PUBLIC_PANEL_HOST=launcher.andline.pro`
-- `PUBLIC_API_HOST=api.andline.pro`
+- `PUBLIC_PANEL_HOST` **обязательно**  
+  Публичный хост дашборда без `https://`, например `launcher.andline.pro`.  
+  Если пусто, после истечения сессии Next.js уводит на `http://localhost:8081/auth/signin`.
+- `PUBLIC_API_HOST`  
+  Публичный хост API/файлов/лаунчера, например `api.andline.pro`. Вместе с panel host включает split по Host.
 
 В Pangolin два ресурса на **один** newt и один порт `127.0.0.1:${PUBLIC_PANEL_PORT}`:
 
