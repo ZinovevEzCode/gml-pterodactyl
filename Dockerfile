@@ -20,6 +20,7 @@ RUN git clone --depth 1 https://github.com/ZinovevEzCode/Gml.Core.git . \
 COPY patches/Directory.Build.props Directory.Build.props
 COPY patches/SystemProcedures.cs src/Gml.Core/Core/Helpers/System/SystemProcedures.cs
 COPY patches/MirrorsHelper.cs src/Gml.Core/Core/Helpers/Mirrors/MirrorsHelper.cs
+COPY patches/ProfileProcedures.cs src/Gml.Core/Core/Helpers/Profiles/ProfileProcedures.cs
 COPY patches/Gml.Core.csproj src/Gml.Core/Gml.Core.csproj
 RUN dotnet publish src/Gml.Core/Gml.Core.csproj -c Release -o /out
 
