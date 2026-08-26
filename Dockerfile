@@ -22,6 +22,7 @@ COPY patches/MirrorsHelper.cs src/Gml.Core/Core/Helpers/Mirrors/MirrorsHelper.cs
 COPY patches/ProfileProcedures.cs src/Gml.Core/Core/Helpers/Profiles/ProfileProcedures.cs
 COPY patches/GameDownloader.cs src/Gml.Core/Core/Helpers/Game/GameDownloader.cs
 COPY patches/LauncherProcedures.cs src/Gml.Core/Core/Helpers/Launcher/LauncherProcedures.cs
+COPY patches/UserProcedures.cs src/Gml.Core/Core/Helpers/User/UserProcedures.cs
 COPY patches/Gml.Core.csproj src/Gml.Core/Gml.Core.csproj
 COPY patches/Gml.Dto.csproj src/Gml.Dto/Gml.Dto.csproj
 COPY patches/SettingsUpdateDto.cs src/Gml.Dto/Settings/SettingsUpdateDto.cs
@@ -76,16 +77,17 @@ RUN useradd -m -d /home/container -s /bin/bash container \
 
 # Copy upstream apps
 COPY --from=upstream_api /app /opt/gml/api
-# Overlay patched Gml.Core + CmlLib. Do NOT copy Microsoft/SQLite DLLs:
-# that overwrites EF's Microsoft.Data.Sqlite and breaks SQLitePCLRaw.core.
+# Overlay patched Gml.Core + CmlLib. Skip Microsoft/SQLite (breaks EF).
+# Copy IdentityModel anyway so leftover Gml.Core JWT references cannot 500 join.
 RUN --mount=from=gml-core-build,source=/out,target=/mnt/core,ro \
     set -e \
  && for f in /mnt/core/*.dll; do \
       base="$(basename "$f")"; \
       case "$base" in \
+        Microsoft.IdentityModel.*|System.IdentityModel.Tokens.Jwt.dll) cp -a "$f" /opt/gml/api/ ;; \
         Microsoft.*|System.*|SQLite*|EntityFramework*|Azure.*|HarfBuzz*|SkiaSharp*) continue ;; \
+        *) cp -a "$f" /opt/gml/api/ ;; \
       esac; \
-      cp -a "$f" /opt/gml/api/; \
     done
 COPY --from=proxy-build /out /opt/gml/proxy
 COPY --from=upstream_client /app /opt/gml/client
