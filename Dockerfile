@@ -25,6 +25,7 @@ COPY patches/LauncherProcedures.cs src/Gml.Core/Core/Helpers/Launcher/LauncherPr
 COPY patches/UserProcedures.cs src/Gml.Core/Core/Helpers/User/UserProcedures.cs
 COPY patches/Gml.Core.csproj src/Gml.Core/Gml.Core.csproj
 COPY patches/Gml.Dto.csproj src/Gml.Dto/Gml.Dto.csproj
+COPY patches/Profile.cs src/Gml.Dto/Minecraft/AuthLib/Profile.cs
 COPY patches/SettingsUpdateDto.cs src/Gml.Dto/Settings/SettingsUpdateDto.cs
 COPY patches/FlexibleSettingsJsonConverters.cs src/Gml.Dto/Settings/FlexibleSettingsJsonConverters.cs
 RUN dotnet publish src/Gml.Core/Gml.Core.csproj -c Release -o /out
