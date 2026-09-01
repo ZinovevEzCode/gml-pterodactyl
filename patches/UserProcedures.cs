@@ -46,20 +46,27 @@ public class UserProcedures : IUserProcedures
         };
 
         var authUser = await _storage.GetUserAsync<AuthUser>(login, options)
-                       ?? await _storage.GetUserByNameAsync<AuthUser>(login, options)
-                       ?? new AuthUser
-                       {
-                           Name = login
-                       };
+                       ?? await _storage.GetUserByNameAsync<AuthUser>(login, options);
 
-        authUser.Name = login;
+        if (authUser is null && Guid.TryParse(customUuid, out var customId))
+            authUser = await FindAuthUserByUuid(customId);
+
+        authUser ??= new AuthUser
+        {
+            Name = login
+        };
+
+        // PK = Login. Steve/steve после CustomEndpoint даёт две строки с одним UUID —
+        // join берёт первую и отвечает 401. Капс ника оставляем как при первом входе.
+        var storageLogin = string.IsNullOrWhiteSpace(authUser.Name) ? login : authUser.Name;
+        authUser.Name = storageLogin;
         authUser.AuthHistory.Add(AuthUserHistory.Create(device, protocol, hwid, address?.ToString()));
-        authUser.Uuid = customUuid ?? authUser.Uuid ?? UsernameToUuid(login);
+        authUser.Uuid = customUuid ?? authUser.Uuid ?? UsernameToUuid(storageLogin);
         authUser.ExpiredDate = DateTime.Now + TimeSpan.FromDays(30);
         authUser.Manager = _gmlManager;
         authUser.IsSlim = isSlim;
 
-        await _storage.SetUserAsync(login, authUser.Uuid, authUser);
+        await _storage.SetUserAsync(storageLogin, authUser.Uuid, authUser);
 
         return authUser;
     }
@@ -130,19 +137,14 @@ public class UserProcedures : IUserProcedures
 
     public async Task<bool> ValidateUser(string userUuid, string serverUuid, string accessToken)
     {
-        if (!Guid.TryParse(userUuid, out var profileId))
+        if (string.IsNullOrEmpty(accessToken) || !Guid.TryParse(userUuid, out var profileId))
             return false;
 
-        var user = await GetUserByUuid(profileId.ToString().ToUpper())
-                   ?? await GetUserByUuid(profileId.ToString("N").ToUpper());
-        if (user is not AuthUser authUser)
-            return false;
-
-        if (authUser.IsBanned)
+        var authUser = await FindAuthUserForJoin(profileId, accessToken);
+        if (authUser is null || authUser.IsBanned)
             return false;
 
         if (string.IsNullOrEmpty(authUser.AccessToken)
-            || string.IsNullOrEmpty(accessToken)
             || !FixedTimeEqualsUtf8(authUser.AccessToken, accessToken))
             return false;
 
@@ -328,25 +330,30 @@ public class UserProcedures : IUserProcedures
             var issuer = Environment.GetEnvironmentVariable("JWT_ISSUER");
             if (string.IsNullOrWhiteSpace(issuer))
                 issuer = "gml-api";
-            if (!payload.TryGetProperty("iss", out var iss) || iss.GetString() != issuer)
+            if (!payload.TryGetProperty("iss", out var iss) || !ClaimEquals(iss, issuer))
                 return false;
 
             var audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE");
             if (string.IsNullOrWhiteSpace(audience))
                 audience = "gml-clients";
-            if (!payload.TryGetProperty("aud", out var aud) || aud.GetString() != audience)
+            if (!payload.TryGetProperty("aud", out var aud) || !ClaimEquals(aud, audience))
                 return false;
 
             var name = ReadClaim(payload,
                 "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name",
                 "unique_name",
                 "name");
-            if (!string.Equals(name, expectedName, StringComparison.Ordinal))
+            if (!string.Equals(name, expectedName, StringComparison.OrdinalIgnoreCase))
                 return false;
 
+            // AccessTokenService пишет и "sub", и ClaimTypes.NameIdentifier → в JSON
+            // часто "sub": ["uuid","uuid"]. GetString() на массиве = null → 401 на каждом join.
             var subject = ReadClaim(payload,
                 "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier",
                 "sub");
+            if (string.IsNullOrEmpty(subject))
+                return true;
+
             return Guid.TryParse(subject, out var tokenUuid) && tokenUuid == expectedUuid;
         }
         catch
@@ -355,16 +362,90 @@ public class UserProcedures : IUserProcedures
         }
     }
 
+    private async Task<AuthUser?> FindAuthUserForJoin(Guid profileId, string accessToken)
+    {
+        if (await GetUserByAccessToken(accessToken) is AuthUser byToken
+            && Guid.TryParse(byToken.Uuid, out var tokenUuid)
+            && tokenUuid == profileId)
+            return byToken;
+
+        var byUuid = await FindAuthUserByUuid(profileId);
+        if (byUuid is not null
+            && !string.IsNullOrEmpty(byUuid.AccessToken)
+            && FixedTimeEqualsUtf8(byUuid.AccessToken, accessToken))
+            return byUuid;
+
+        var users = await GetUsers();
+        foreach (var user in users)
+        {
+            if (user is not AuthUser candidate)
+                continue;
+            if (!Guid.TryParse(candidate.Uuid, out var storedId) || storedId != profileId)
+                continue;
+            if (string.IsNullOrEmpty(candidate.AccessToken)
+                || !FixedTimeEqualsUtf8(candidate.AccessToken, accessToken))
+                continue;
+            return candidate;
+        }
+
+        return byUuid;
+    }
+
+    private async Task<AuthUser?> FindAuthUserByUuid(Guid profileId)
+    {
+        return await GetUserByUuid(profileId.ToString().ToUpper()) as AuthUser
+               ?? await GetUserByUuid(profileId.ToString("N").ToUpper()) as AuthUser
+               ?? await GetUserByUuid(profileId.ToString("D")) as AuthUser
+               ?? await GetUserByUuid(profileId.ToString("N")) as AuthUser;
+    }
+
     private static string? ReadClaim(JsonElement payload, params string[] keys)
     {
         foreach (var key in keys)
         {
-            if (payload.TryGetProperty(key, out var value))
-            {
-                var text = value.GetString();
-                if (!string.IsNullOrEmpty(text))
-                    return text;
-            }
+            if (!payload.TryGetProperty(key, out var value))
+                continue;
+
+            var text = ClaimText(value);
+            if (!string.IsNullOrEmpty(text))
+                return text;
+        }
+
+        return null;
+    }
+
+    private static bool ClaimEquals(JsonElement value, string expected)
+    {
+        if (value.ValueKind == JsonValueKind.String)
+            return value.GetString() == expected;
+
+        if (value.ValueKind != JsonValueKind.Array)
+            return false;
+
+        foreach (var item in value.EnumerateArray())
+        {
+            if (item.ValueKind == JsonValueKind.String && item.GetString() == expected)
+                return true;
+        }
+
+        return false;
+    }
+
+    private static string? ClaimText(JsonElement value)
+    {
+        if (value.ValueKind == JsonValueKind.String)
+            return value.GetString();
+
+        if (value.ValueKind != JsonValueKind.Array)
+            return null;
+
+        foreach (var item in value.EnumerateArray())
+        {
+            if (item.ValueKind != JsonValueKind.String)
+                continue;
+            var text = item.GetString();
+            if (!string.IsNullOrEmpty(text))
+                return text;
         }
 
         return null;
