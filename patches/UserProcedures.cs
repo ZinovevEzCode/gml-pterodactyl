@@ -40,16 +40,21 @@ public class UserProcedures : IUserProcedures
         string? hwid,
         bool isSlim)
     {
-        var authUser = await _storage.GetUserAsync<AuthUser>(login, new JsonSerializerOptions
+        var options = new JsonSerializerOptions
         {
             Converters = { new SessionConverter() }
-        }) ?? new AuthUser
-        {
-            Name = login
         };
 
+        var authUser = await _storage.GetUserAsync<AuthUser>(login, options)
+                       ?? await _storage.GetUserByNameAsync<AuthUser>(login, options)
+                       ?? new AuthUser
+                       {
+                           Name = login
+                       };
+
+        authUser.Name = login;
         authUser.AuthHistory.Add(AuthUserHistory.Create(device, protocol, hwid, address?.ToString()));
-        authUser.Uuid = customUuid ?? UsernameToUuid(login);
+        authUser.Uuid = customUuid ?? authUser.Uuid ?? UsernameToUuid(login);
         authUser.ExpiredDate = DateTime.Now + TimeSpan.FromDays(30);
         authUser.Manager = _gmlManager;
         authUser.IsSlim = isSlim;
@@ -73,10 +78,38 @@ public class UserProcedures : IUserProcedures
 
     public async Task<IUser?> GetUserByName(string userName)
     {
-        return await _storage.GetUserByNameAsync<AuthUser>(userName, new JsonSerializerOptions
+        var options = new JsonSerializerOptions
         {
             Converters = { new SessionConverter() }
-        });
+        };
+
+        // profiles/info сравнивает JWT с первой строкой Login.ToLower().
+        // Дубликаты Steve/steve после смены капса в CustomEndpoint дают 403.
+        var users = await _storage.GetUsersAsync<AuthUser>(options);
+        AuthUser? exact = null;
+        AuthUser? best = null;
+        foreach (var user in users)
+        {
+            if (user is null || !string.Equals(user.Name, userName, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            if (string.Equals(user.Name, userName, StringComparison.Ordinal))
+                exact = user;
+
+            if (best is null || user.ExpiredDate > best.ExpiredDate)
+                best = user;
+        }
+
+        if (exact is not null)
+            best = exact;
+
+        if (best is not null)
+        {
+            best.Manager = _gmlManager;
+            return best;
+        }
+
+        return await _storage.GetUserByNameAsync<AuthUser>(userName, options);
     }
 
     public async Task<IUser?> GetUserBySkinGuid(string guid)
